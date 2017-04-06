@@ -47,7 +47,7 @@ func testConn(t *testing.T, disableEPSV bool) {
 
 	if disableEPSV {
 		delete(c.features, "EPSV")
-		c.DisableEPSV = true
+		c.unepsv = true
 	}
 
 	err = c.Login("anonymous", "anonymous")
@@ -219,13 +219,13 @@ func TestConnIPv6(t *testing.T) {
 	c.Close()
 }
 
-// TestConnect tests the legacy Connect function
+// TestConnect tests the legacy Dial function
 func TestConnect(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
 
-	c, err := Connect("localhost:21")
+	c, err := Dial("localhost:21")
 	if err != nil {
 		t.Fatal(err)
 	}

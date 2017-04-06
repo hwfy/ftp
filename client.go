@@ -454,6 +454,13 @@ func (c *client) Rename(from, to string) error {
 	return err
 }
 
+// Remove issues a DELE FTP command to delete the specified file from the
+// remote FTP server.
+func (c *client) Remove(path string) error {
+	_, _, err := c.cmd(StatusRequestedFileActionOK, "DELE %s", path)
+	return err
+}
+
 // MakeDir issues a MKD FTP command to create the specified directory on the
 // remote FTP server.
 func (c *client) MakeDir(path string) error {

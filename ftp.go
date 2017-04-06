@@ -2,6 +2,7 @@
 package ftp
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -50,7 +51,7 @@ func (ftp *client) Close() (err error) {
 
 // NewClient initialize ftp from the configuration file
 func NewClient(path ...string) (*client, error) {
-	cfg := "../config/ftp.config"
+	cfg := "../config/system.config"
 
 	if path != nil && path[0] != "" {
 		cfg = path[0]
@@ -80,22 +81,26 @@ func NewClient(path ...string) (*client, error) {
 
 // Delete delete the matching files in the specified directory
 func (ftp *client) Delete(dirName, fileName string) error {
-	//get all file names
-	nameList, err := ftp.NameList(dirName)
-	if err != nil || nameList == nil {
-		return fmt.Errorf("The directory does not exist or is empty: %s %s", err, dirName)
+	conn, err := ftp.cmdDataConnFrom(0, "NLST %s", dirName)
+	if err != nil {
+		return err
 	}
-	for _, name := range nameList {
-		if strings.Contains(name, fileName) {
-			ftp.cmd(StatusRequestedFileActionOK, "DELE %s", name)
+	rep := &response{conn, ftp}
+	defer rep.Close()
+
+	dirEmpty := true
+	scanner := bufio.NewScanner(rep)
+
+	for scanner.Scan() {
+		if strings.Contains(scanner.Text(), fileName) {
+			ftp.Remove(scanner.Text())
 		}
+		dirEmpty = false
 	}
-	//delete the current empty directory
-	nameList, _ = ftp.NameList(dirName)
-	if nameList == nil {
+	if dirEmpty {
 		ftp.RemoveDir(dirName)
 	}
-	return nil
+	return scanner.Err()
 }
 
 // Upload upload files
@@ -126,8 +131,9 @@ func (ftp *client) Names(dirName string) (map[string][]string, error) {
 	ftp.ChangeDir(dirName)
 
 	dir := make(map[string][]string)
-	//the file type is 1 for the directory
+
 	for _, file := range list {
+		//the file type is 1 for the directory
 		if file.Type == 1 {
 			var prefixs []string
 			//get all the file names in the directory
