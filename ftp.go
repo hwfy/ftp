@@ -51,7 +51,7 @@ func (ftp *client) Close() (err error) {
 
 // NewClient initialize ftp from the configuration file
 func NewClient(path ...string) (*client, error) {
-	cfg := "../config/system.config"
+	cfg := "../config/ftp.config"
 
 	if path != nil && path[0] != "" {
 		cfg = path[0]
