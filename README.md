@@ -1,4 +1,4 @@
-# redis
+# ftp
 A simple ftp client for golang
 
 # Installation
