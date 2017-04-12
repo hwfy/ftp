@@ -15,26 +15,49 @@
 package ftp
 
 import (
-	"net"
+	"testing"
+	"time"
 )
 
-// response represent a data-connection
-type response struct {
-	conn net.Conn
-	c    *client
-}
-
-// Read implements the io.Reader interface on a FTP data connection.
-func (r *response) Read(buf []byte) (int, error) {
-	return r.conn.Read(buf)
-}
-
-// Close implements the io.Closer interface on a FTP data connection.
-func (r *response) Close() error {
-	err := r.conn.Close()
-	_, _, err2 := r.c.conn.ReadResponse(StatusClosingDataConnection)
-	if err2 != nil {
-		err = err2
+// TestConnect tests the legacy Dial function
+func TestConnect(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
 	}
-	return err
+
+	c, err := Dial("localhost:21")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c.Close()
+}
+
+func TestTimeout(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	c, err := DialTimeout("localhost:2121", 1*time.Second)
+	if err == nil {
+		t.Fatal("expected timeout, got nil error")
+		c.Close()
+	}
+}
+
+func TestWrongLogin(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	c, err := DialTimeout("localhost:21", 5*time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+
+	err = c.Login("zoo2Shia", "fei5Yix9")
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
 }
